@@ -1,17 +1,18 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const Database = require('better-sqlite3');
+const fs = require('fs');
 
-// Initialize SQLite Database
-const db = new Database('expenses.db');
-db.exec(`
-  CREATE TABLE IF NOT EXISTS expenses (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    amount REAL,
-    tag TEXT,
-    date TEXT DEFAULT CURRENT_DATE
-  )
-`);
+// Store the JSON file securely in the user's AppData directory
+const dbPath = path.join(app.getPath('userData'), 'expenses.json');
+
+// Initialize the file if it doesn't exist
+if (!fs.existsSync(dbPath)) {
+    fs.writeFileSync(dbPath, JSON.stringify([]));
+}
+
+// Helper functions to read and write to the JSON file
+const readDB = () => JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+const writeDB = (data) => fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
 
 let mainWindow;
 
@@ -19,10 +20,10 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 900,
         height: 600,
-        frame: false, // Frameless for a custom, modern look
+        frame: false,
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false // Keeping it simple for local dev; consider preload scripts for production
+            contextIsolation: false
         }
     });
 
@@ -31,14 +32,21 @@ function createWindow() {
 
 app.whenReady().then(createWindow);
 
-// IPC Handlers for frontend communication
+// IPC Handlers: Replicating the exact same behavior as SQLite
 ipcMain.handle('add-expense', (event, expense) => {
-    const stmt = db.prepare('INSERT INTO expenses (amount, tag, date) VALUES (?, ?, ?)');
-    stmt.run(expense.amount, expense.tag, expense.date);
+    const expenses = readDB();
+
+    // Force amount to be a number and add a unique ID
+    expense.amount = parseFloat(expense.amount);
+    expense.id = Date.now();
+
+    expenses.push(expense);
+    writeDB(expenses);
     return { success: true };
 });
 
 ipcMain.handle('get-expenses', () => {
-    const stmt = db.prepare('SELECT * FROM expenses ORDER BY date DESC');
-    return stmt.all();
+    const expenses = readDB();
+    // Sort by date descending (newest first)
+    return expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
 });
