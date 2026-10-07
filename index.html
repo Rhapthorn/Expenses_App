@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Load Chart.js locally from node_modules or CDN -->
+    <script src="./node_modules/chart.js/dist/chart.umd.js"></script>
+</head>
+<body>
+<!-- Custom Window Title Bar -->
+<div class="title-bar">
+    <span>Expense Tracker</span>
+    <button id="close-btn">X</button>
+</div>
+
+<div class="container">
+    <div class="input-section">
+        <input type="number" id="amount" placeholder="Amount (€)">
+        <input type="text" id="tag" placeholder="Tag (e.g. Groceries)">
+        <input type="date" id="date">
+        <button id="add-btn">Log Expense</button>
+    </div>
+
+    <div class="dashboard">
+        <div class="list-section">
+            <h3>Recent Expenses</h3>
+            <ul id="expense-list"></ul>
+        </div>
+
+        <div class="chart-section">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>
