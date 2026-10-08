@@ -15,7 +15,8 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Prevents unwanted desktop scrollbars */
+    overflow: hidden;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 /* Custom Title Bar */
@@ -25,43 +26,102 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 10px 0 15px;
-    /* CRITICAL: Makes the frameless window draggable */
+    padding-left: 15px;
+    padding-right: 0;
     -webkit-app-region: drag;
     user-select: none;
     font-size: 14px;
     font-weight: 600;
+    transition: background-color 0.3s;
 }
 
-#close-btn {
-    /* CRITICAL: Buttons must be non-draggable to register clicks */
+.window-controls {
+    display: flex;
+    height: 32px;
+}
+
+.window-controls button {
     -webkit-app-region: no-drag;
     background: transparent;
     border: none;
     color: var(--text-color);
     cursor: pointer;
     font-size: 14px;
-    border-radius: 4px;
-    width: 28px;
-    height: 28px;
+    line-height: 1;
+    width: 46px;
+    height: 32px;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s;
+    border-radius: 0;
+    outline: none;
+}
+
+.window-controls button:hover {
+    background-color: #313244;
 }
 
 #close-btn:hover {
-    background-color: #f38ba8;
-    color: #11111b;
+    background-color: #f38ba8 !important;
+    color: #11111b !important;
 }
 
-/* Main Container */
 .container {
     flex: 1;
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
+}
+
+/* Insights Bar */
+.insights-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--surface-color);
+    padding: 10px 15px;
+    border-radius: var(--border-radius);
+    gap: 15px;
+}
+
+.salary-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+}
+
+.salary-box input {
+    width: 100px;
+    padding: 5px 8px;
+}
+
+.advice-box {
+    flex: 1;
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.export-btn {
+    background-color: #a6e3a1; /* Green tone for excel */
+    color: #11111b;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: opacity 0.2s;
+}
+
+.export-btn:hover {
+    opacity: 0.9;
 }
 
 /* Inputs */
@@ -82,13 +142,13 @@ input {
     border-radius: 4px;
     outline: none;
     font-size: 14px;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
 }
 
 input:focus {
     border-color: var(--accent-color);
 }
 
-/* Fix for date picker icon on dark mode */
 ::-webkit-calendar-picker-indicator {
     filter: invert(1);
 }
@@ -108,15 +168,14 @@ button#add-btn:hover {
     opacity: 0.9;
 }
 
-/* Dashboard Layout */
+/* Dashboard */
 .dashboard {
     display: flex;
     gap: 20px;
     flex: 1;
-    min-height: 0; /* Ensures inner scrolling works */
+    min-height: 0;
 }
 
-/* Expenses List */
 .list-section {
     flex: 1;
     background-color: var(--surface-color);
@@ -130,4 +189,114 @@ button#add-btn:hover {
     margin-top: 0;
     margin-bottom: 15px;
     font-size: 16px;
+    color: var(--accent-color);
+}
+
+#expense-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+#expense-list li {
+    background-color: #181825;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    border-left: 4px solid var(--accent-color);
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s;
+}
+
+.action-btns {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-btn {
+    background-color: transparent;
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.edit-btn:hover {
+    background-color: var(--accent-color);
+    color: #11111b;
+}
+
+.delete-btn {
+    background-color: transparent;
+    color: #f38ba8;
+    border: 1px solid #f38ba8;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.delete-btn:hover {
+    background-color: #f38ba8;
+    color: #11111b;
+}
+
+.chart-section {
+    flex: 2;
+    background-color: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+canvas {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* ============================ */
+/*        LIGHT MODE THEME      */
+/* ============================ */
+body.light-mode {
+    --bg-color: #e6e9ef;
+    --surface-color: #ffffff;
+    --text-color: #4c4f69;
+    --accent-color: #1e66f5;
+}
+
+body.light-mode .title-bar {
+    background-color: #ccd0da;
+    color: #4c4f69;
+}
+
+body.light-mode .window-controls button {
+    color: #4c4f69;
+}
+
+body.light-mode .window-controls button:hover {
+    background-color: #bcc0cc;
+}
+
+body.light-mode input {
+    background-color: #eff1f5;
+    border: 1px solid #ccd0da;
+    color: #4c4f69;
+}
+
+body.light-mode #expense-list li {
+    background-color: #eff1f5;
+}
+
+body.light-mode ::-webkit-calendar-picker-indicator {
+    filter: invert(0); /* Fixes date picker icon color for light mode */
 }
