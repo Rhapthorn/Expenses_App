@@ -6,6 +6,22 @@
     --border-radius: 8px;
 }
 
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #181825;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: #313244;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #45475a;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -16,10 +32,8 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: background-color 0.3s, color 0.3s;
 }
 
-/* Custom Title Bar */
 .title-bar {
     height: 32px;
     background-color: #11111b;
@@ -32,7 +46,6 @@ body {
     user-select: none;
     font-size: 14px;
     font-weight: 600;
-    transition: background-color 0.3s;
 }
 
 .window-controls {
@@ -76,17 +89,20 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    overflow: hidden; /* Contains child scrolling */
 }
 
 /* Insights Bar */
 .insights-bar {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     background-color: var(--surface-color);
     padding: 10px 15px;
     border-radius: var(--border-radius);
     gap: 15px;
+    flex-shrink: 0; /* Prevents bar from squishing */
 }
 
 .salary-box {
@@ -96,8 +112,24 @@ body {
     font-weight: bold;
 }
 
-.salary-box input {
+/* Specific targeting so we don't accidentally style the checkbox */
+input[type="number"],
+input[type="text"],
+input[type="date"] {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 12px;
+    background-color: #181825;
+    border: 1px solid #313244;
+    color: var(--text-color);
+    border-radius: 4px;
+    outline: none;
+    font-size: 14px;
+}
+
+.salary-box input[type="number"] {
     width: 100px;
+    flex: none;
     padding: 5px 8px;
 }
 
@@ -106,10 +138,11 @@ body {
     text-align: center;
     font-weight: 600;
     font-size: 14px;
+    min-width: 300px;
 }
 
 .export-btn {
-    background-color: #a6e3a1; /* Green tone for excel */
+    background-color: #a6e3a1;
     color: #11111b;
     border: none;
     border-radius: 4px;
@@ -127,30 +160,44 @@ body {
 /* Inputs */
 .input-section {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     background-color: var(--surface-color);
     padding: 15px;
     border-radius: var(--border-radius);
+    align-items: center;
+    flex-shrink: 0; /* Prevents inputs from squishing */
 }
 
-input {
-    flex: 1;
-    padding: 10px 12px;
-    background-color: #181825;
-    border: 1px solid #313244;
-    color: var(--text-color);
-    border-radius: 4px;
-    outline: none;
-    font-size: 14px;
-    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
-}
-
-input:focus {
+input[type="number"]:focus,
+input[type="text"]:focus,
+input[type="date"]:focus {
     border-color: var(--accent-color);
 }
 
 ::-webkit-calendar-picker-indicator {
     filter: invert(1);
+}
+
+/* Checkbox (FIXED ALIGNMENT) */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #a6e3a1; /* Matches the subscription panel color */
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0 5px;
+}
+
+#is-recurring {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #a6e3a1;
 }
 
 button#add-btn {
@@ -162,27 +209,38 @@ button#add-btn {
     cursor: pointer;
     font-weight: bold;
     transition: opacity 0.2s;
+    white-space: nowrap;
 }
 
 button#add-btn:hover {
     opacity: 0.9;
 }
 
-/* Dashboard */
+/* Dashboard (STRICT SCROLL BOUNDARIES) */
 .dashboard {
     display: flex;
-    gap: 20px;
+    gap: 15px;
     flex: 1;
-    min-height: 0;
+    min-height: 0; /* CRITICAL: Forces children to respect layout height */
 }
 
-.list-section {
+.list-section, .subs-section {
     flex: 1;
+    min-width: 250px;
     background-color: var(--surface-color);
     border-radius: var(--border-radius);
     padding: 15px;
     display: flex;
     flex-direction: column;
+    min-height: 0; /* CRITICAL: Allows inner lists to scroll */
+}
+
+.subs-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #a6e3a1;
+    flex-shrink: 0;
 }
 
 .list-section h3 {
@@ -190,32 +248,44 @@ button#add-btn:hover {
     margin-bottom: 15px;
     font-size: 16px;
     color: var(--accent-color);
+    flex-shrink: 0;
 }
 
-#expense-list {
+#expense-list, #subs-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    overflow-y: auto;
+    overflow-y: auto; /* Activates the scrollbar */
     flex: 1;
+    min-height: 0; /* Prevents list from breaking parent container */
+    padding-right: 5px;
 }
 
-#expense-list li {
+#expense-list li, #subs-list li {
     background-color: #181825;
     padding: 12px 15px;
     margin-bottom: 8px;
     border-radius: 4px;
-    border-left: 4px solid var(--accent-color);
-    font-size: 14px;
+    font-size: 13px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: background-color 0.3s;
+    gap: 10px;
+    flex-shrink: 0; /* Keeps list items from collapsing */
+}
+
+#expense-list li { border-left: 4px solid var(--accent-color); }
+#subs-list li { border-left: 4px solid #a6e3a1; }
+
+.item-text {
+    flex: 1;
+    word-break: break-word;
 }
 
 .action-btns {
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .edit-btn {
@@ -227,11 +297,7 @@ button#add-btn:hover {
     cursor: pointer;
     font-size: 12px;
 }
-
-.edit-btn:hover {
-    background-color: var(--accent-color);
-    color: #11111b;
-}
+.edit-btn:hover { background-color: var(--accent-color); color: #11111b; }
 
 .delete-btn {
     background-color: transparent;
@@ -242,61 +308,23 @@ button#add-btn:hover {
     cursor: pointer;
     font-size: 12px;
 }
+.delete-btn:hover { background-color: #f38ba8; color: #11111b; }
 
-.delete-btn:hover {
-    background-color: #f38ba8;
-    color: #11111b;
-}
-
+/* Chart Section (STRICT BOUNDARIES) */
 .chart-section {
     flex: 2;
+    min-width: 300px;
     background-color: var(--surface-color);
     border-radius: var(--border-radius);
     padding: 15px;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column; /* Stacks contents properly */
+    min-height: 0; /* CRITICAL: Prevents chart from bleeding out */
+}
+
+.chart-container {
     position: relative;
-}
-
-canvas {
-    max-width: 100%;
-    max-height: 100%;
-}
-
-/* ============================ */
-/*        LIGHT MODE THEME      */
-/* ============================ */
-body.light-mode {
-    --bg-color: #e6e9ef;
-    --surface-color: #ffffff;
-    --text-color: #4c4f69;
-    --accent-color: #1e66f5;
-}
-
-body.light-mode .title-bar {
-    background-color: #ccd0da;
-    color: #4c4f69;
-}
-
-body.light-mode .window-controls button {
-    color: #4c4f69;
-}
-
-body.light-mode .window-controls button:hover {
-    background-color: #bcc0cc;
-}
-
-body.light-mode input {
-    background-color: #eff1f5;
-    border: 1px solid #ccd0da;
-    color: #4c4f69;
-}
-
-body.light-mode #expense-list li {
-    background-color: #eff1f5;
-}
-
-body.light-mode ::-webkit-calendar-picker-indicator {
-    filter: invert(0); /* Fixes date picker icon color for light mode */
+    flex: 1;
+    width: 100%;
+    min-height: 0; /* Locks the Chart.js canvas inside */
 }

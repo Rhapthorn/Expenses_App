@@ -3,55 +3,57 @@ const { ipcRenderer } = require('electron');
 let expenseChart;
 let editingId = null;
 
-// --- Window & Theme Controls ---
 document.getElementById('min-btn').addEventListener('click', () => ipcRenderer.send('minimize-window'));
 document.getElementById('max-btn').addEventListener('click', () => ipcRenderer.send('maximize-window'));
 document.getElementById('close-btn').addEventListener('click', () => ipcRenderer.send('close-window'));
 
-const themeBtn = document.getElementById('theme-btn');
-let isLightMode = localStorage.getItem('theme') === 'light';
-
-if (isLightMode) document.body.classList.add('light-mode');
-themeBtn.innerText = isLightMode ? '🌙' : '☀️';
-
-themeBtn.addEventListener('click', () => {
-    isLightMode = !isLightMode;
-    document.body.classList.toggle('light-mode', isLightMode);
-    localStorage.setItem('theme', isLightMode ? 'light' : 'dark');
-    themeBtn.innerText = isLightMode ? '🌙' : '☀️';
-});
-
-// --- Salary & Export Controls ---
 const salaryInput = document.getElementById('salary');
 ipcRenderer.invoke('get-salary').then(salary => salaryInput.value = salary);
 
 salaryInput.addEventListener('change', async (e) => {
     await ipcRenderer.invoke('set-salary', e.target.value);
-    loadData(); // Refresh advice box when salary changes
+    loadData();
 });
 
+// UPGRADED: Captures the chart as an image before exporting
 document.getElementById('export-btn').addEventListener('click', () => {
-    ipcRenderer.invoke('export-excel');
+    let chartImage = null;
+    if (expenseChart) {
+        chartImage = expenseChart.toBase64Image(); // Snapshots the canvas
+    }
+    ipcRenderer.invoke('export-excel', chartImage);
 });
 
-// --- CRUD Operations ---
 document.getElementById('add-btn').addEventListener('click', async () => {
     const amount = document.getElementById('amount').value;
     const tag = document.getElementById('tag').value;
-    const date = document.getElementById('date').value || new Date().toISOString().split('T')[0];
+    const dateStr = document.getElementById('date').value || new Date().toISOString().split('T')[0];
+    const isRecurring = document.getElementById('is-recurring').checked;
 
     if (amount && tag) {
         if (editingId) {
-            await ipcRenderer.invoke('edit-expense', { id: editingId, amount, tag, date });
+            await ipcRenderer.invoke('edit-expense', { id: editingId, amount, tag, date: dateStr });
             editingId = null;
             document.getElementById('add-btn').innerText = 'Log Expense';
+            document.getElementById('recurring-wrapper').style.display = 'flex';
         } else {
-            await ipcRenderer.invoke('add-expense', { amount, tag, date });
+            await ipcRenderer.invoke('add-expense', { amount, tag, date: dateStr });
+
+            if (isRecurring) {
+                const d = new Date(dateStr);
+                await ipcRenderer.invoke('add-sub', {
+                    amount: parseFloat(amount),
+                    tag: tag,
+                    dayOfMonth: d.getDate(),
+                    lastProcessedMonth: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                });
+            }
         }
 
         document.getElementById('amount').value = '';
         document.getElementById('tag').value = '';
         document.getElementById('date').value = '';
+        document.getElementById('is-recurring').checked = false;
 
         loadData();
     }
@@ -59,12 +61,11 @@ document.getElementById('add-btn').addEventListener('click', async () => {
 
 async function loadData() {
     const expenses = await ipcRenderer.invoke('get-expenses');
+    const subs = await ipcRenderer.invoke('get-subs');
     const salary = parseFloat(salaryInput.value) || 0;
 
-    // 1. Update List
     const list = document.getElementById('expense-list');
     list.innerHTML = '';
-
     let totalExpenses = 0;
 
     expenses.forEach(exp => {
@@ -72,7 +73,8 @@ async function loadData() {
         const li = document.createElement('li');
 
         const textSpan = document.createElement('span');
-        textSpan.innerText = `${exp.date} - ${exp.tag}: €${exp.amount}`;
+        textSpan.className = 'item-text';
+        textSpan.innerText = `${exp.date} - ${exp.tag}: €${exp.amount.toFixed(2)}`;
 
         const btnGroup = document.createElement('div');
         btnGroup.className = 'action-btns';
@@ -86,6 +88,7 @@ async function loadData() {
             document.getElementById('tag').value = exp.tag;
             document.getElementById('date').value = exp.date;
             document.getElementById('add-btn').innerText = 'Update Expense';
+            document.getElementById('recurring-wrapper').style.display = 'none';
         });
 
         const deleteBtn = document.createElement('button');
@@ -105,7 +108,30 @@ async function loadData() {
         list.appendChild(li);
     });
 
-    // 2. Aggregate Data for Chart & Advice
+    const subsList = document.getElementById('subs-list');
+    subsList.innerHTML = '';
+    subs.forEach(sub => {
+        const li = document.createElement('li');
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'item-text';
+        textSpan.innerText = `${sub.tag} (€${sub.amount.toFixed(2)}) - Day ${sub.dayOfMonth}`;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerText = 'Cancel';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.addEventListener('click', async () => {
+            if (confirm(`Cancel recurring ${sub.tag}?`)) {
+                await ipcRenderer.invoke('delete-sub', sub.id);
+                loadData();
+            }
+        });
+
+        li.appendChild(textSpan);
+        li.appendChild(deleteBtn);
+        subsList.appendChild(li);
+    });
+
     const totalsByTag = expenses.reduce((acc, curr) => {
         acc[curr.tag] = (acc[curr.tag] || 0) + curr.amount;
         return acc;
@@ -117,14 +143,12 @@ async function loadData() {
 
 function updateAdviceBox(totalsByTag, totalExpenses, salary) {
     const adviceBox = document.getElementById('advice-box');
-
     if (Object.keys(totalsByTag).length === 0) {
         adviceBox.innerText = "Log expenses to get insights.";
         adviceBox.style.color = "var(--text-color)";
         return;
     }
 
-    // Find the highest expense category
     let highestTag = '';
     let highestAmount = 0;
     for (const [tag, amount] of Object.entries(totalsByTag)) {
@@ -135,27 +159,41 @@ function updateAdviceBox(totalsByTag, totalExpenses, salary) {
     }
 
     let remaining = salary - totalExpenses;
-    let advice = `Highest spend: €${highestAmount} on ${highestTag}. `;
+    let advice = `Highest spend: €${highestAmount.toFixed(2)} on ${highestTag}. `;
 
     if (salary > 0) {
         if (remaining < 0) {
-            advice += `⚠️ You are over budget by €${Math.abs(remaining)}! Consider cutting back on ${highestTag}.`;
-            adviceBox.style.color = "#f38ba8"; // Red warning
+            advice += `⚠️ You are over budget by €${Math.abs(remaining).toFixed(2)}! Consider cutting back on ${highestTag}.`;
+            adviceBox.style.color = "#f38ba8";
         } else {
-            advice += `You have €${remaining} left for the month.`;
+            advice += `You have €${remaining.toFixed(2)} left for the month.`;
             adviceBox.style.color = "var(--accent-color)";
         }
-    } else {
-        advice += `Set your salary to track your budget.`;
-        adviceBox.style.color = "var(--text-color)";
     }
-
     adviceBox.innerText = advice;
 }
+
+// NEW: Predefined color map for categories
+const tagColors = {
+    'Groceries': '#a6e3a1',     // Green
+    'Rent/Mortgage': '#f38ba8', // Red
+    'Utilities': '#fab387',     // Peach
+    'Transportation': '#89b4fa',// Blue
+    'Gaming': '#cba6f7',        // Purple
+    'Gym': '#f9e2af',           // Yellow
+    'Software': '#94e2d5',      // Teal
+    'Healthcare': '#f5c2e7',    // Pink
+    'Subscriptions': '#74c7ec', // Light Blue
+    'Default': '#89dceb'        // Cyan fallback for custom tags
+};
 
 function updateChart(labels, data) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     if (expenseChart) expenseChart.destroy();
+
+    // Maps the labels dynamically to the colors above
+    const bgColors = labels.map(label => tagColors[label] || tagColors['Default']);
+
     expenseChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -163,16 +201,18 @@ function updateChart(labels, data) {
             datasets: [{
                 label: 'Expenses by Tag',
                 data: data,
-                backgroundColor: '#89b4fa',
+                backgroundColor: bgColors,
                 borderRadius: 4
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false } // Hides the legend since bars are color-coded now
+            }
         }
     });
 }
 
-// Initial load
 loadData();

@@ -5,11 +5,9 @@
     <script src="./node_modules/chart.js/dist/chart.umd.js"></script>
 </head>
 <body>
-<!-- Custom Window Title Bar -->
 <div class="title-bar">
     <span>Expense Tracker</span>
     <div class="window-controls">
-        <button id="theme-btn">☀️</button>
         <button id="min-btn">&#8211;</button>
         <button id="max-btn">&#9633;</button>
         <button id="close-btn">X</button>
@@ -17,20 +15,15 @@
 </div>
 
 <div class="container">
-
-    <!-- Insights & Settings Bar -->
     <div class="insights-bar">
         <div class="salary-box">
             <label for="salary">Net Salary (€):</label>
             <input type="number" id="salary" placeholder="0">
         </div>
-        <div class="advice-box" id="advice-box">
-            <!-- AI Advice populates here -->
-        </div>
+        <div class="advice-box" id="advice-box"></div>
         <button id="export-btn" class="export-btn">Export to Excel</button>
     </div>
 
-    <!-- Input Section -->
     <div class="input-section">
         <input type="number" id="amount" placeholder="Amount (€)">
 
@@ -40,26 +33,37 @@
             <option value="Rent/Mortgage"></option>
             <option value="Utilities"></option>
             <option value="Transportation"></option>
-            <option value="Dining Out"></option>
-            <option value="Entertainment"></option>
-            <option value="Shopping"></option>
+            <option value="Gaming"></option>
+            <option value="Gym"></option>
+            <option value="Software"></option>
             <option value="Healthcare"></option>
-            <option value="Subscriptions"></option>
         </datalist>
 
         <input type="date" id="date">
+
+        <!-- FIXED: Clearer text for the subscription feature -->
+        <label class="checkbox-label" id="recurring-wrapper">
+            <input type="checkbox" id="is-recurring"> Recurring Sub
+        </label>
+
         <button id="add-btn">Log Expense</button>
     </div>
 
-    <!-- Dashboard Section -->
     <div class="dashboard">
         <div class="list-section">
             <h3>Recent Expenses</h3>
             <ul id="expense-list"></ul>
         </div>
 
+        <div class="subs-section">
+            <h3>Active Subs</h3>
+            <ul id="subs-list"></ul>
+        </div>
+
         <div class="chart-section">
-            <canvas id="expenseChart"></canvas>
+            <div class="chart-container">
+                <canvas id="expenseChart"></canvas>
+            </div>
         </div>
     </div>
 </div>

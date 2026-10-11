@@ -1,13 +1,15 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const ExcelJS = require('exceljs'); // NEW: True Excel library
 
 const dbPath = path.join(app.getPath('userData'), 'expenses.json');
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+const subsPath = path.join(app.getPath('userData'), 'subs.json');
 
-// Initialize JSON files if they don't exist
 if (!fs.existsSync(dbPath)) fs.writeFileSync(dbPath, JSON.stringify([]));
 if (!fs.existsSync(settingsPath)) fs.writeFileSync(settingsPath, JSON.stringify({ salary: 0 }));
+if (!fs.existsSync(subsPath)) fs.writeFileSync(subsPath, JSON.stringify([]));
 
 const readDB = () => JSON.parse(fs.readFileSync(dbPath, 'utf8'));
 const writeDB = (data) => fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
@@ -15,12 +17,45 @@ const writeDB = (data) => fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)
 const readSettings = () => JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
 const writeSettings = (data) => fs.writeFileSync(settingsPath, JSON.stringify(data, null, 2));
 
+const readSubs = () => JSON.parse(fs.readFileSync(subsPath, 'utf8'));
+const writeSubs = (data) => fs.writeFileSync(subsPath, JSON.stringify(data, null, 2));
+
+function processSubscriptions() {
+    const subs = readSubs();
+    const expenses = readDB();
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentDay = now.getDate();
+
+    let updated = false;
+
+    subs.forEach(sub => {
+        if (sub.lastProcessedMonth !== currentMonth && currentDay >= sub.dayOfMonth) {
+            expenses.push({
+                id: Date.now() + Math.random(),
+                amount: sub.amount,
+                tag: sub.tag,
+                date: now.toISOString().split('T')[0]
+            });
+            sub.lastProcessedMonth = currentMonth;
+            updated = true;
+        }
+    });
+
+    if (updated) {
+        writeSubs(subs);
+        writeDB(expenses);
+    }
+}
+
 let mainWindow;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 950,
+        width: 1050,
         height: 700,
+        minWidth: 850,
+        minHeight: 550,
         frame: false,
         webPreferences: {
             nodeIntegration: true,
@@ -30,9 +65,11 @@ function createWindow() {
     mainWindow.loadFile('index.html');
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+    processSubscriptions();
+    createWindow();
+});
 
-// --- Data Handlers ---
 ipcMain.handle('add-expense', (event, expense) => {
     const expenses = readDB();
     expense.amount = parseFloat(expense.amount);
@@ -43,8 +80,7 @@ ipcMain.handle('add-expense', (event, expense) => {
 });
 
 ipcMain.handle('get-expenses', () => {
-    const expenses = readDB();
-    return expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return readDB().sort((a, b) => new Date(b.date) - new Date(a.date));
 });
 
 ipcMain.handle('edit-expense', (event, updatedExpense) => {
@@ -69,7 +105,23 @@ ipcMain.handle('delete-expense', (event, id) => {
     return { success: true };
 });
 
-// --- Settings & Export Handlers ---
+ipcMain.handle('add-sub', (event, sub) => {
+    const subs = readSubs();
+    sub.id = Date.now();
+    subs.push(sub);
+    writeSubs(subs);
+    return true;
+});
+
+ipcMain.handle('get-subs', () => readSubs());
+
+ipcMain.handle('delete-sub', (event, id) => {
+    let subs = readSubs();
+    subs = subs.filter(s => s.id !== id);
+    writeSubs(subs);
+    return true;
+});
+
 ipcMain.handle('get-salary', () => readSettings().salary);
 
 ipcMain.handle('set-salary', (event, salary) => {
@@ -79,24 +131,57 @@ ipcMain.handle('set-salary', (event, salary) => {
     return true;
 });
 
-ipcMain.handle('export-excel', async () => {
+// UPGRADED: True Excel Export with Image Embedding
+ipcMain.handle('export-excel', async (event, chartImageBase64) => {
     const expenses = readDB();
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
-        title: 'Export Expenses to Excel (CSV)',
-        defaultPath: 'expenses.csv',
-        filters: [{ name: 'Excel CSV', extensions: ['csv'] }]
+        title: 'Export Expenses to Excel',
+        defaultPath: 'expenses.xlsx', // Now a true .xlsx file
+        filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
     });
 
     if (filePath) {
-        const csvHeader = 'Date,Tag,Amount\n';
-        const csvRows = expenses.map(e => `${e.date},${e.tag},${e.amount}`).join('\n');
-        fs.writeFileSync(filePath, csvHeader + csvRows);
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Expenses');
+
+        // Setup Columns
+        sheet.columns = [
+            { header: 'Date', key: 'date', width: 15 },
+            { header: 'Tag', key: 'tag', width: 25 },
+            { header: 'Amount (€)', key: 'amount', width: 15 }
+        ];
+
+        // Make headers bold
+        sheet.getRow(1).font = { bold: true };
+
+        // Add Expense Data
+        expenses.forEach(e => {
+            sheet.addRow({ date: e.date, tag: e.tag, amount: e.amount });
+        });
+
+        // Embed the Chart Image
+        if (chartImageBase64) {
+            // Strip out the metadata prefix from the base64 string
+            const base64Data = chartImageBase64.replace(/^data:image\/png;base64,/, "");
+
+            const imageId = workbook.addImage({
+                base64: base64Data,
+                extension: 'png',
+            });
+
+            // Place the image starting at Column E (col 4), Row 2
+            sheet.addImage(imageId, {
+                tl: { col: 4, row: 1 },
+                ext: { width: 600, height: 350 }
+            });
+        }
+
+        await workbook.xlsx.writeFile(filePath);
         return true;
     }
     return false;
 });
 
-// --- Window Controls ---
 ipcMain.on('minimize-window', () => mainWindow.minimize());
 ipcMain.on('close-window', () => mainWindow.close());
 ipcMain.on('maximize-window', () => {
