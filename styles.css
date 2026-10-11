@@ -6,7 +6,6 @@
     --border-radius: 8px;
 }
 
-/* Custom Scrollbars */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #181825; border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background: #313244; border-radius: 4px; }
@@ -73,7 +72,6 @@ body {
     overflow: hidden;
 }
 
-/* Insights Bar */
 .insights-bar {
     display: flex;
     flex-wrap: wrap;
@@ -135,7 +133,6 @@ input[type="date"] {
 
 .export-btn:hover { opacity: 0.9; }
 
-/* Inputs */
 .input-section {
     display: flex;
     flex-wrap: wrap;
@@ -155,7 +152,6 @@ input[type="date"]:focus {
 
 ::-webkit-calendar-picker-indicator { filter: invert(1); }
 
-/* Checkbox */
 .checkbox-label {
     display: flex;
     align-items: center;
@@ -190,7 +186,6 @@ button#add-btn {
 
 button#add-btn:hover { opacity: 0.9; }
 
-/* Dashboard */
 .dashboard {
     display: flex;
     gap: 15px;
@@ -222,7 +217,6 @@ button#add-btn:hover { opacity: 0.9; }
     padding-right: 5px;
 }
 
-/* Base List Item */
 #expense-list li, #subs-list li {
     background-color: #181825;
     padding: 10px 12px;
@@ -235,9 +229,10 @@ button#add-btn:hover { opacity: 0.9; }
 #expense-list li { border-left: 4px solid var(--accent-color); }
 #subs-list li { border-left: 4px solid #a6e3a1; }
 
-/* Inline Edit View & Display View */
+/* FIXED: Wraps content safely to prevent unreadable single columns */
 .item-view {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
@@ -245,15 +240,17 @@ button#add-btn:hover { opacity: 0.9; }
 
 .item-edit {
     display: none;
-    flex-wrap: wrap; /* Allows elements to drop to a new line */
-    justify-content: flex-end; /* Aligns wrapped items to the right */
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: center;
     gap: 8px;
 }
 
+/* FIXED: Added strict safe minimum width and normal word breaks */
 .item-text {
-    flex: 1;
-    word-break: break-word;
+    flex: 1 1 120px;
+    word-break: normal;
+    overflow-wrap: break-word;
 }
 
 .action-btns {
@@ -262,16 +259,15 @@ button#add-btn:hover { opacity: 0.9; }
     flex-shrink: 0;
 }
 
-.item-edit .action-btns {
-    margin-left: auto; /* Pushes the Save/Cancel buttons to the far right */
+.item-view .action-btns, .item-edit .action-btns {
+    margin-left: auto;
 }
 
-/* Inline Edit Inputs */
 .inline-input {
-    min-width: 70px !important; /* Prevents inputs from vanishing */
+    min-width: 70px !important;
     padding: 6px 8px !important;
     font-size: 12px !important;
-    flex: 1 1 80px; /* Allows inputs to grow and shrink healthily */
+    flex: 1 1 80px;
 }
 .inline-input[type="date"] { flex: 1.2 1 90px; }
 .inline-input[type="text"] { flex: 1.5 1 100px; }
@@ -327,9 +323,6 @@ button#add-btn:hover { opacity: 0.9; }
     min-height: 0;
 }
 
-/* ==================================
-   SAVINGS GOALS SECTION
-   ================================== */
 .goals-bar {
     background-color: var(--surface-color);
     padding: 15px;
@@ -422,3 +415,56 @@ button#add-goal-btn {
     white-space: nowrap;
 }
 button#add-goal-btn:hover { opacity: 0.9; }
+
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(17, 17, 27, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background-color: var(--surface-color);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 18px;
+    border-bottom: 1px solid #313244;
+    padding-bottom: 10px;
+    margin-bottom: 5px;
+}
+
+.setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 14px;
+}
+
+.setting-group select {
+    padding: 8px;
+    background-color: #181825;
+    border: 1px solid #313244;
+    color: var(--text-color);
+    border-radius: 4px;
+    outline: none;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
