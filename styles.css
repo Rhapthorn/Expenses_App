@@ -7,20 +7,10 @@
 }
 
 /* Custom Scrollbars */
-::-webkit-scrollbar {
-    width: 8px;
-}
-::-webkit-scrollbar-track {
-    background: #181825;
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb {
-    background: #313244;
-    border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #45475a;
-}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #181825; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #313244; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #45475a; }
 
 body {
     margin: 0;
@@ -48,10 +38,7 @@ body {
     font-weight: 600;
 }
 
-.window-controls {
-    display: flex;
-    height: 32px;
-}
+.window-controls { display: flex; height: 32px; }
 
 .window-controls button {
     -webkit-app-region: no-drag;
@@ -74,14 +61,8 @@ body {
     outline: none;
 }
 
-.window-controls button:hover {
-    background-color: #313244;
-}
-
-#close-btn:hover {
-    background-color: #f38ba8 !important;
-    color: #11111b !important;
-}
+.window-controls button:hover { background-color: #313244; }
+#close-btn:hover { background-color: #f38ba8 !important; color: #11111b !important; }
 
 .container {
     flex: 1;
@@ -89,7 +70,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    overflow: hidden; /* Contains child scrolling */
+    overflow: hidden;
 }
 
 /* Insights Bar */
@@ -102,7 +83,7 @@ body {
     padding: 10px 15px;
     border-radius: var(--border-radius);
     gap: 15px;
-    flex-shrink: 0; /* Prevents bar from squishing */
+    flex-shrink: 0;
 }
 
 .salary-box {
@@ -112,7 +93,6 @@ body {
     font-weight: bold;
 }
 
-/* Specific targeting so we don't accidentally style the checkbox */
 input[type="number"],
 input[type="text"],
 input[type="date"] {
@@ -153,9 +133,7 @@ input[type="date"] {
     transition: opacity 0.2s;
 }
 
-.export-btn:hover {
-    opacity: 0.9;
-}
+.export-btn:hover { opacity: 0.9; }
 
 /* Inputs */
 .input-section {
@@ -166,7 +144,7 @@ input[type="date"] {
     padding: 15px;
     border-radius: var(--border-radius);
     align-items: center;
-    flex-shrink: 0; /* Prevents inputs from squishing */
+    flex-shrink: 0;
 }
 
 input[type="number"]:focus,
@@ -175,17 +153,15 @@ input[type="date"]:focus {
     border-color: var(--accent-color);
 }
 
-::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-}
+::-webkit-calendar-picker-indicator { filter: invert(1); }
 
-/* Checkbox (FIXED ALIGNMENT) */
+/* Checkbox */
 .checkbox-label {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    color: #a6e3a1; /* Matches the subscription panel color */
+    color: #a6e3a1;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
@@ -212,16 +188,14 @@ button#add-btn {
     white-space: nowrap;
 }
 
-button#add-btn:hover {
-    opacity: 0.9;
-}
+button#add-btn:hover { opacity: 0.9; }
 
-/* Dashboard (STRICT SCROLL BOUNDARIES) */
+/* Dashboard */
 .dashboard {
     display: flex;
     gap: 15px;
     flex: 1;
-    min-height: 0; /* CRITICAL: Forces children to respect layout height */
+    min-height: 0;
 }
 
 .list-section, .subs-section {
@@ -232,50 +206,50 @@ button#add-btn:hover {
     padding: 15px;
     display: flex;
     flex-direction: column;
-    min-height: 0; /* CRITICAL: Allows inner lists to scroll */
+    min-height: 0;
 }
 
-.subs-section h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 16px;
-    color: #a6e3a1;
-    flex-shrink: 0;
-}
-
-.list-section h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 16px;
-    color: var(--accent-color);
-    flex-shrink: 0;
-}
+.subs-section h3 { margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #a6e3a1; flex-shrink: 0; }
+.list-section h3 { margin-top: 0; margin-bottom: 15px; font-size: 16px; color: var(--accent-color); flex-shrink: 0; }
 
 #expense-list, #subs-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    overflow-y: auto; /* Activates the scrollbar */
+    overflow-y: auto;
     flex: 1;
-    min-height: 0; /* Prevents list from breaking parent container */
+    min-height: 0;
     padding-right: 5px;
 }
 
+/* Base List Item */
 #expense-list li, #subs-list li {
     background-color: #181825;
-    padding: 12px 15px;
+    padding: 10px 12px;
     margin-bottom: 8px;
     border-radius: 4px;
     font-size: 13px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0; /* Keeps list items from collapsing */
+    display: block;
 }
 
 #expense-list li { border-left: 4px solid var(--accent-color); }
 #subs-list li { border-left: 4px solid #a6e3a1; }
+
+/* Inline Edit View & Display View */
+.item-view {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.item-edit {
+    display: none;
+    flex-wrap: wrap; /* Allows elements to drop to a new line */
+    justify-content: flex-end; /* Aligns wrapped items to the right */
+    align-items: center;
+    gap: 8px;
+}
 
 .item-text {
     flex: 1;
@@ -288,6 +262,20 @@ button#add-btn:hover {
     flex-shrink: 0;
 }
 
+.item-edit .action-btns {
+    margin-left: auto; /* Pushes the Save/Cancel buttons to the far right */
+}
+
+/* Inline Edit Inputs */
+.inline-input {
+    min-width: 70px !important; /* Prevents inputs from vanishing */
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    flex: 1 1 80px; /* Allows inputs to grow and shrink healthily */
+}
+.inline-input[type="date"] { flex: 1.2 1 90px; }
+.inline-input[type="text"] { flex: 1.5 1 100px; }
+
 .edit-btn {
     background-color: transparent;
     color: var(--accent-color);
@@ -298,6 +286,17 @@ button#add-btn:hover {
     font-size: 12px;
 }
 .edit-btn:hover { background-color: var(--accent-color); color: #11111b; }
+
+.save-btn {
+    background-color: transparent;
+    color: #a6e3a1;
+    border: 1px solid #a6e3a1;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.save-btn:hover { background-color: #a6e3a1; color: #11111b; }
 
 .delete-btn {
     background-color: transparent;
@@ -310,7 +309,6 @@ button#add-btn:hover {
 }
 .delete-btn:hover { background-color: #f38ba8; color: #11111b; }
 
-/* Chart Section (STRICT BOUNDARIES) */
 .chart-section {
     flex: 2;
     min-width: 300px;
@@ -318,13 +316,109 @@ button#add-btn:hover {
     border-radius: var(--border-radius);
     padding: 15px;
     display: flex;
-    flex-direction: column; /* Stacks contents properly */
-    min-height: 0; /* CRITICAL: Prevents chart from bleeding out */
+    flex-direction: column;
+    min-height: 0;
 }
 
 .chart-container {
     position: relative;
     flex: 1;
     width: 100%;
-    min-height: 0; /* Locks the Chart.js canvas inside */
+    min-height: 0;
 }
+
+/* ==================================
+   SAVINGS GOALS SECTION
+   ================================== */
+.goals-bar {
+    background-color: var(--surface-color);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-shrink: 0;
+}
+
+.goals-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.goals-header h3 { margin: 0; color: #f9e2af; font-size: 16px; }
+
+.goals-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 160px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.goal-item {
+    background-color: #181825;
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 4px solid #f9e2af;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.goal-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.progress-track {
+    width: 100%;
+    height: 12px;
+    background-color: #313244;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #f9e2af;
+    width: 0%;
+    transition: width 0.5s ease-out;
+}
+
+input.fund-input {
+    width: 70px !important;
+    min-width: 70px !important;
+    padding: 4px 8px !important;
+    flex: none;
+}
+
+.fund-btn {
+    background-color: transparent;
+    color: #a6e3a1;
+    border: 1px solid #a6e3a1;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.fund-btn:hover { background-color: #a6e3a1; color: #11111b; }
+
+button#add-goal-btn {
+    padding: 10px 20px;
+    background-color: #f9e2af;
+    color: #11111b;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+button#add-goal-btn:hover { opacity: 0.9; }

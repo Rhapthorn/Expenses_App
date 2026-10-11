@@ -1,15 +1,17 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const ExcelJS = require('exceljs'); // NEW: True Excel library
+const ExcelJS = require('exceljs');
 
 const dbPath = path.join(app.getPath('userData'), 'expenses.json');
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
 const subsPath = path.join(app.getPath('userData'), 'subs.json');
+const goalsPath = path.join(app.getPath('userData'), 'goals.json'); // NEW: Goals database
 
 if (!fs.existsSync(dbPath)) fs.writeFileSync(dbPath, JSON.stringify([]));
 if (!fs.existsSync(settingsPath)) fs.writeFileSync(settingsPath, JSON.stringify({ salary: 0 }));
 if (!fs.existsSync(subsPath)) fs.writeFileSync(subsPath, JSON.stringify([]));
+if (!fs.existsSync(goalsPath)) fs.writeFileSync(goalsPath, JSON.stringify([]));
 
 const readDB = () => JSON.parse(fs.readFileSync(dbPath, 'utf8'));
 const writeDB = (data) => fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
@@ -19,6 +21,9 @@ const writeSettings = (data) => fs.writeFileSync(settingsPath, JSON.stringify(da
 
 const readSubs = () => JSON.parse(fs.readFileSync(subsPath, 'utf8'));
 const writeSubs = (data) => fs.writeFileSync(subsPath, JSON.stringify(data, null, 2));
+
+const readGoals = () => JSON.parse(fs.readFileSync(goalsPath, 'utf8'));
+const writeGoals = (data) => fs.writeFileSync(goalsPath, JSON.stringify(data, null, 2));
 
 function processSubscriptions() {
     const subs = readSubs();
@@ -122,6 +127,35 @@ ipcMain.handle('delete-sub', (event, id) => {
     return true;
 });
 
+// NEW: Goal Handlers
+ipcMain.handle('add-goal', (event, goal) => {
+    const goals = readGoals();
+    goal.id = Date.now();
+    goal.current = 0;
+    goals.push(goal);
+    writeGoals(goals);
+    return true;
+});
+
+ipcMain.handle('get-goals', () => readGoals());
+
+ipcMain.handle('update-goal', (event, { id, amountToAdd }) => {
+    const goals = readGoals();
+    const index = goals.findIndex(g => g.id === id);
+    if (index !== -1) {
+        goals[index].current += parseFloat(amountToAdd);
+        writeGoals(goals);
+    }
+    return true;
+});
+
+ipcMain.handle('delete-goal', (event, id) => {
+    let goals = readGoals();
+    goals = goals.filter(g => g.id !== id);
+    writeGoals(goals);
+    return true;
+});
+
 ipcMain.handle('get-salary', () => readSettings().salary);
 
 ipcMain.handle('set-salary', (event, salary) => {
@@ -131,12 +165,11 @@ ipcMain.handle('set-salary', (event, salary) => {
     return true;
 });
 
-// UPGRADED: True Excel Export with Image Embedding
 ipcMain.handle('export-excel', async (event, chartImageBase64) => {
     const expenses = readDB();
     const { filePath } = await dialog.showSaveDialog(mainWindow, {
         title: 'Export Expenses to Excel',
-        defaultPath: 'expenses.xlsx', // Now a true .xlsx file
+        defaultPath: 'expenses.xlsx',
         filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }]
     });
 
@@ -144,32 +177,24 @@ ipcMain.handle('export-excel', async (event, chartImageBase64) => {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Expenses');
 
-        // Setup Columns
         sheet.columns = [
             { header: 'Date', key: 'date', width: 15 },
             { header: 'Tag', key: 'tag', width: 25 },
             { header: 'Amount (€)', key: 'amount', width: 15 }
         ];
 
-        // Make headers bold
         sheet.getRow(1).font = { bold: true };
 
-        // Add Expense Data
         expenses.forEach(e => {
             sheet.addRow({ date: e.date, tag: e.tag, amount: e.amount });
         });
 
-        // Embed the Chart Image
         if (chartImageBase64) {
-            // Strip out the metadata prefix from the base64 string
             const base64Data = chartImageBase64.replace(/^data:image\/png;base64,/, "");
-
             const imageId = workbook.addImage({
                 base64: base64Data,
                 extension: 'png',
             });
-
-            // Place the image starting at Column E (col 4), Row 2
             sheet.addImage(imageId, {
                 tl: { col: 4, row: 1 },
                 ext: { width: 600, height: 350 }

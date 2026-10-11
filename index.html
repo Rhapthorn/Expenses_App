@@ -24,6 +24,18 @@
         <button id="export-btn" class="export-btn">Export to Excel</button>
     </div>
 
+    <div class="goals-bar">
+        <div class="goals-header">
+            <h3>Savings Goals</h3>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="goal-name" placeholder="Name (e.g. New GPU or Trip Fund)">
+                <input type="number" id="goal-target" placeholder="Target (€)" style="width: 100px; flex: none;">
+                <button id="add-goal-btn">Set Goal</button>
+            </div>
+        </div>
+        <div id="goals-list" class="goals-list"></div>
+    </div>
+
     <div class="input-section">
         <input type="number" id="amount" placeholder="Amount (€)">
 
@@ -41,7 +53,6 @@
 
         <input type="date" id="date">
 
-        <!-- FIXED: Clearer text for the subscription feature -->
         <label class="checkbox-label" id="recurring-wrapper">
             <input type="checkbox" id="is-recurring"> Recurring Sub
         </label>
@@ -51,7 +62,8 @@
 
     <div class="dashboard">
         <div class="list-section">
-            <h3>Recent Expenses</h3>
+            <!-- Added an ID here so we can inject the active filter name -->
+            <h3 id="expense-list-header">Recent Expenses</h3>
             <ul id="expense-list"></ul>
         </div>
 
