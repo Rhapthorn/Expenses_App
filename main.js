@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const ExcelJS = require('exceljs');
@@ -6,7 +6,7 @@ const ExcelJS = require('exceljs');
 const dbPath = path.join(app.getPath('userData'), 'expenses.json');
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
 const subsPath = path.join(app.getPath('userData'), 'subs.json');
-const goalsPath = path.join(app.getPath('userData'), 'goals.json'); // NEW: Goals database
+const goalsPath = path.join(app.getPath('userData'), 'goals.json');
 
 if (!fs.existsSync(dbPath)) fs.writeFileSync(dbPath, JSON.stringify([]));
 if (!fs.existsSync(settingsPath)) fs.writeFileSync(settingsPath, JSON.stringify({ salary: 0 }));
@@ -68,11 +68,24 @@ function createWindow() {
         }
     });
     mainWindow.loadFile('index.html');
+
+    // Register Global Shortcut (Ctrl + Shift + E)
+    globalShortcut.register('CommandOrControl+Shift+E', () => {
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+            mainWindow.show();
+        }
+    });
 }
 
 app.whenReady().then(() => {
     processSubscriptions();
     createWindow();
+});
+
+app.on('will-quit', () => {
+    globalShortcut.unregisterAll();
 });
 
 ipcMain.handle('add-expense', (event, expense) => {
@@ -127,7 +140,6 @@ ipcMain.handle('delete-sub', (event, id) => {
     return true;
 });
 
-// NEW: Goal Handlers
 ipcMain.handle('add-goal', (event, goal) => {
     const goals = readGoals();
     goal.id = Date.now();

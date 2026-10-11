@@ -1,7 +1,7 @@
 const { ipcRenderer } = require('electron');
 
 let expenseChart;
-let activeFilter = null; // NEW: Tracks the currently clicked chart bar
+let activeFilter = null;
 
 document.getElementById('min-btn').addEventListener('click', () => ipcRenderer.send('minimize-window'));
 document.getElementById('max-btn').addEventListener('click', () => ipcRenderer.send('maximize-window'));
@@ -35,7 +35,7 @@ document.getElementById('add-goal-btn').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('add-btn').addEventListener('click', async () => {
+async function handleLogExpense() {
     const amount = document.getElementById('amount').value;
     const tag = document.getElementById('tag').value;
     const dateStr = document.getElementById('date').value || new Date().toISOString().split('T')[0];
@@ -61,6 +61,16 @@ document.getElementById('add-btn').addEventListener('click', async () => {
 
         loadData();
     }
+}
+
+document.getElementById('add-btn').addEventListener('click', handleLogExpense);
+
+['amount', 'tag', 'date'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleLogExpense();
+        }
+    });
 });
 
 async function loadData() {
@@ -69,15 +79,11 @@ async function loadData() {
     const goals = await ipcRenderer.invoke('get-goals');
     const salary = parseFloat(salaryInput.value) || 0;
 
-    // 1. Render Expenses with Active Filtering
     const list = document.getElementById('expense-list');
     const listHeader = document.getElementById('expense-list-header');
     list.innerHTML = '';
 
-    // Calculate total across ALL expenses (not just filtered ones) for accurate advice
     const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0);
-
-    // Filter the list if a chart bar was clicked
     const filteredExpenses = activeFilter ? expenses.filter(e => e.tag === activeFilter) : expenses;
     listHeader.innerText = activeFilter ? `Recent Expenses (${activeFilter})` : 'Recent Expenses';
 
@@ -182,7 +188,6 @@ async function loadData() {
         list.appendChild(li);
     });
 
-    // 2. Render Subscriptions
     const subsList = document.getElementById('subs-list');
     subsList.innerHTML = '';
     subs.forEach(sub => {
@@ -210,7 +215,6 @@ async function loadData() {
         subsList.appendChild(li);
     });
 
-    // 3. Render Goals
     const goalsList = document.getElementById('goals-list');
     goalsList.innerHTML = '';
     goals.forEach(goal => {
@@ -267,7 +271,6 @@ async function loadData() {
         goalsList.appendChild(div);
     });
 
-    // 4. Update Chart & Advice
     const totalsByTag = expenses.reduce((acc, curr) => {
         acc[curr.tag] = (acc[curr.tag] || 0) + curr.amount;
         return acc;
@@ -326,11 +329,10 @@ function updateChart(labels, data) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     if (expenseChart) expenseChart.destroy();
 
-    // Dim unselected bars if a filter is active
     const bgColors = labels.map(label => {
         const baseColor = tagColors[label] || tagColors['Default'];
         if (activeFilter && activeFilter !== label) {
-            return baseColor + '40'; // Adds transparency to hex colors
+            return baseColor + '40';
         }
         return baseColor;
     });
@@ -364,20 +366,16 @@ function updateChart(labels, data) {
                     }
                 }
             },
-            // NEW: Interactivity Handlers
             onClick: (event, elements, chart) => {
                 if (elements.length > 0) {
                     const clickedLabel = chart.data.labels[elements[0].index];
-                    // Toggle filter off if clicking the same bar, otherwise apply it
                     activeFilter = activeFilter === clickedLabel ? null : clickedLabel;
                 } else {
-                    // Clicking empty chart space clears the filter
                     activeFilter = null;
                 }
                 loadData();
             },
             onHover: (event, elements) => {
-                // Change cursor to a pointer when hovering over bars
                 event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
             }
         }
